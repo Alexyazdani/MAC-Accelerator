@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<nf:module xmlns:nf="http://www.NetFPGA.org/NF2_register_system" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.NetFPGA.org/NF2_register_system NF2_register_system.xsd ">
+	<nf:name>processor</nf:name>
+	<nf:prefix>proc</nf:prefix>
+	<nf:location>udp</nf:location>
+	<nf:description>Registers for regfiles</nf:description>
+	<nf:blocksize>512</nf:blocksize>
+	<nf:registers>
+		
+		<!-- Software Registers -->
+		<nf:register>
+			<nf:name>dmem_addr_encoded</nf:name>
+			<nf:description>Data Memory Address Encoded</nf:description>
+			<nf:type>generic_software32</nf:type>
+		</nf:register>
+		<nf:register>
+			<nf:name>dmem_addr_batch</nf:name>
+			<nf:description>Data Memory Address Batch</nf:description>
+			<nf:type>generic_software32</nf:type>
+		</nf:register>
+		<nf:register>
+			<nf:name>dmem_addr_scalar</nf:name>
+			<nf:description>Data Memory Address Scalar</nf:description>
+			<nf:type>generic_software32</nf:type>
+		</nf:register>
+		<nf:register>
+			<nf:name>dmem_data_encoded</nf:name>
+			<nf:description>Data Memory Data Encoded</nf:description>
+			<nf:type>generic_software32</nf:type>
+		</nf:register>
+		<nf:register>
+			<nf:name>dmem_data_batch</nf:name>
+			<nf:description>Data Memory Data Batch</nf:description>
+			<nf:type>generic_software32</nf:type>
+		</nf:register>
+		<nf:register>
+			<nf:name>dmem_data_scalar</nf:name>
+			<nf:description>Data Memory Data Scalar</nf:description>
+			<nf:type>generic_software32</nf:type>
+		</nf:register>
+		<nf:register>
+			<nf:name>imem_addr</nf:name>
+			<nf:description>Instruction Memory Address</nf:description>
+			<nf:type>generic_software32</nf:type>
+		</nf:register>
+		<nf:register>
+			<nf:name>imem_data</nf:name>
+			<nf:description>Instruction Memory Data Input</nf:description>
+			<nf:type>generic_software32</nf:type>
+		</nf:register>
+		<nf:register>
+			<nf:name>cmd</nf:name>
+			<nf:description>Command Register</nf:description>
+			<nf:type>generic_software32</nf:type>
+		</nf:register>
+
+		<!-- Hardware Registers -->
+		<nf:register>
+			<nf:name>dmem_out_encoded</nf:name>
+			<nf:description>DMEM Out Encoded</nf:description>
+			<nf:type>generic_hardware32</nf:type>
+		</nf:register>
+		<nf:register>
+			<nf:name>dmem_out_batch</nf:name>
+			<nf:description>DMEM Out Batch</nf:description>
+			<nf:type>generic_hardware32</nf:type>
+		</nf:register>
+		<nf:register>
+			<nf:name>dmem_out_scalar</nf:name>
+			<nf:description>DMEM Out Scalar</nf:description>
+			<nf:type>generic_hardware32</nf:type>
+		</nf:register>
+		<nf:register>
+			<nf:name>imem_out</nf:name>
+			<nf:description>Instruction Memory Output</nf:description>
+			<nf:type>generic_hardware32</nf:type>
+		</nf:register>
+        
+	</nf:registers>
+</nf:module>
+

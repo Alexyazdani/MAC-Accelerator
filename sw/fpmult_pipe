@@ -1,0 +1,575 @@
+#!/usr/bin/perl -w
+use lib "/usr/local/netfpga/lib/Perl5";
+use strict;
+
+# my $ILA1_ADDR_REG = 0x2000400;
+# my $ILA2_ADDR_REG = 0x2000404;
+
+# my $DMEM_ADDR_ENCODED = 0x2000408;
+# my $DMEM_ADDR_BATCH = 0x200040c;
+# my $DMEM_ADDR_SCALAR = 0x2000410;
+
+# my $DMEM_DATA_ENCODED = 0x2000414;
+# my $DMEM_DATA_BATCH = 0x2000418;
+# my $DMEM_DATA_SCALAR = 0x200041c;
+
+# my $IMEM_ADDR_REG = 0x2000420;
+# my $IMEM_DATA_REG = 0x2000424;
+
+# my $CMD_REG = 0x2000428;
+
+# my $ILA_OUT_REG = 0x200042c;
+# my $ILA2_OUT_REG = 0x2000430;
+
+# my $DMEM_OUT_ENCODED = 0x2000434;
+# my $DMEM_OUT_BATCH = 0x2000438;
+# my $DMEM_OUT_SCALAR = 0x200043c;
+# my $IMEM_OUT_REG = 0x2000440;
+
+
+my $DMEM_ADDR_ENCODED = 0x2000400;
+my $DMEM_ADDR_BATCH = 0x2000404;
+my $DMEM_ADDR_SCALAR = 0x2000408;
+
+my $DMEM_DATA_ENCODED = 0x200040c;
+my $DMEM_DATA_BATCH = 0x2000410;
+my $DMEM_DATA_SCALAR = 0x2000414;
+
+my $IMEM_ADDR_REG = 0x2000418;
+my $IMEM_DATA_REG = 0x200041c;
+
+my $CMD_REG = 0x2000420;
+
+my $DMEM_OUT_ENCODED = 0x2000424;
+my $DMEM_OUT_BATCH = 0x2000428;
+my $DMEM_OUT_SCALAR = 0x200042c;
+my $IMEM_OUT_REG = 0x2000430;
+
+
+sub regwrite {
+   my( $addr, $value ) = @_;
+   my $cmd = sprintf( "regwrite $addr 0x%08x", $value );
+   my $result = `$cmd`;
+   # print "Ran command '$cmd' and got result '$result'\n";
+}
+
+sub regread {
+   my( $addr ) = @_;
+   my $cmd = sprintf( "regread $addr" );
+   my @out = `$cmd`;
+   my $result = $out[0];
+   if ( $result =~ m/Reg (0x[0-9a-f]+) \((\d+)\):\s+(0x[0-9a-f]+) \((\d+)\)/ ) {
+      $result = $3;
+   }
+   return $result;
+}
+
+sub procreset {
+   regwrite( $CMD_REG, 0x1 );
+   regwrite( $CMD_REG, 0x0 );
+}
+
+sub write_dmem_scalar {
+    my ($addr, $value16) = @_;
+    my $cmd_val = hex(regread($CMD_REG));
+    my $value32 = $value16 & 0xFFFF;
+    $value32 = $value32 | 0x00000000;
+    regwrite($DMEM_DATA_SCALAR, $value32);
+    regwrite($DMEM_ADDR_SCALAR, $addr);
+    regwrite($CMD_REG, $cmd_val | 0x10);
+    regwrite($CMD_REG, $cmd_val & ~0x10);
+}
+sub write_dmem_batch {
+    my ($addr, $value16) = @_;
+    my $cmd_val = hex(regread($CMD_REG));
+    my $value32 = $value16 & 0xFFFF;
+    $value32 = $value32 | 0x00000000;
+    regwrite($DMEM_DATA_BATCH, $value32);
+    regwrite($DMEM_ADDR_BATCH, $addr);
+    regwrite($CMD_REG, $cmd_val | 0x10);
+    regwrite($CMD_REG, $cmd_val & ~0x10);
+}
+sub write_dmem_encoded {
+    my ($addr, $value16) = @_;
+    my $cmd_val = hex(regread($CMD_REG));
+    my $value32 = $value16 & 0xFFFF;
+    $value32 = $value32 | 0x00000000;
+    regwrite($DMEM_DATA_ENCODED, $value32);
+    regwrite($DMEM_ADDR_ENCODED, $addr);
+    regwrite($CMD_REG, $cmd_val | 0x10);
+    regwrite($CMD_REG, $cmd_val & ~0x10);
+}
+
+
+sub dump_dmem_encoded {
+    open my $olderr, ">&STDERR";   # Save original STDERR
+    open STDERR, ">", "/dev/null";
+    for my $addr (0..511) {
+        read_dmem_encoded($addr);
+    }
+    open STDERR, ">&", $olderr;
+}
+sub dump_dmem_scalar {
+    open my $olderr, ">&STDERR";   # Save original STDERR
+    open STDERR, ">", "/dev/null";
+    for my $addr (0..63) {
+        read_dmem_scalar($addr);
+    }
+    open STDERR, ">&", $olderr;
+}
+sub dump_dmem_batch {
+    open my $olderr, ">&STDERR";   # Save original STDERR
+    open STDERR, ">", "/dev/null";
+    for my $addr (0..511) {
+        read_dmem_batch($addr);
+    }
+    open STDERR, ">&", $olderr;
+}
+sub dump_imem {
+    open my $olderr, ">&STDERR";   # Save original STDERR
+    open STDERR, ">", "/dev/null";
+    for my $addr (0..4095) {
+        read_imem($addr);
+    }
+    open STDERR, ">&", $olderr;
+}
+
+sub read_dmem_encoded {
+    my ($addr) = @_;
+    my $cmd_val = hex(regread($CMD_REG));
+    regwrite($DMEM_ADDR_ENCODED, $addr);
+    regwrite($CMD_REG, $cmd_val | 0x20);
+    my $val16 = hex(regread($DMEM_OUT_ENCODED)) & 0xFFFF;
+    print "", sprintf("%04X", $val16), "\n";
+    regwrite($CMD_REG, $cmd_val & ~0x20);
+}
+
+sub read_dmem_batch {
+    my ($addr) = @_;
+    my $cmd_val = hex(regread($CMD_REG));
+    regwrite($DMEM_ADDR_BATCH, $addr);
+    regwrite($CMD_REG, $cmd_val | 0x20);
+    my $val16 = hex(regread($DMEM_OUT_BATCH)) & 0xFFFF;
+    print "DMEM[", $addr, "] (Batch):   0x", sprintf("%04X", $val16), "\n";
+    regwrite($CMD_REG, $cmd_val & ~0x20);
+}
+
+sub read_dmem_scalar {
+    my ($addr) = @_;
+    my $cmd_val = hex(regread($CMD_REG));
+    regwrite($DMEM_ADDR_SCALAR, $addr);
+    regwrite($CMD_REG, $cmd_val | 0x20);
+    my $val16 = hex(regread($DMEM_OUT_SCALAR)) & 0xFFFF;
+    print "DMEM[", $addr, "] (Scalar):  0x", sprintf("%04X", $val16), "\n";
+    regwrite($CMD_REG, $cmd_val & ~0x20);
+}
+
+sub dmem_load_encoded {
+    open my $olderr, ">&STDERR";
+    open STDERR, ">", "/dev/null";
+    my ($file) = @_;
+    open my $info, $file or die "Could not open $file: $!";
+    binmode $info;
+    my $count = 0;
+    while (my $line = <$info>) {
+        print $line;
+        my $val16 = hex($line);
+        regwrite($DMEM_DATA_ENCODED, $val16);
+        regwrite($DMEM_ADDR_ENCODED, $count);
+        my $cmd_val = hex(regread($CMD_REG));
+        regwrite($CMD_REG, $cmd_val | 0x10);
+        regwrite($CMD_REG, $cmd_val & ~0x10);
+        $count++;
+    }
+    open STDERR, ">&", $olderr;
+}
+sub dmem_load_scalar {
+    open my $olderr, ">&STDERR";
+    open STDERR, ">", "/dev/null";
+    my ($file) = @_;
+    open my $info, $file or die "Could not open $file: $!";
+    binmode $info;
+    my $count = 0;
+    while (my $line = <$info>) {
+        print $line;
+        my $val16 = hex($line);
+        regwrite($DMEM_DATA_SCALAR, $val16);
+        regwrite($DMEM_ADDR_SCALAR, $count);
+        my $cmd_val = hex(regread($CMD_REG));
+        regwrite($CMD_REG, $cmd_val | 0x10);
+        regwrite($CMD_REG, $cmd_val & ~0x10);
+        $count++;
+    }
+    open STDERR, ">&", $olderr;
+}
+sub dmem_load_batch {
+    open my $olderr, ">&STDERR";
+    open STDERR, ">", "/dev/null";
+    my ($file) = @_;
+    open my $info, $file or die "Could not open $file: $!";
+    binmode $info;
+    my $count = 0;
+    while (my $line = <$info>) {
+        print $line;
+        my $val16 = hex($line);
+        regwrite($DMEM_DATA_BATCH, $val16);
+        regwrite($DMEM_ADDR_BATCH, $count);
+        my $cmd_val = hex(regread($CMD_REG));
+        regwrite($CMD_REG, $cmd_val | 0x10);
+        regwrite($CMD_REG, $cmd_val & ~0x10);
+        # printf "[%d] 0x%04X\n", $count, hex($line);
+        $count++;
+    }
+    open STDERR, ">&", $olderr;
+}
+
+sub write_imem {
+   my($addr, $val) = @_;
+   my $cmd_val = hex(regread($CMD_REG));
+   regwrite($IMEM_DATA_REG, $val);
+   regwrite($IMEM_ADDR_REG, $addr);
+   regwrite($CMD_REG, $cmd_val | 0x4);
+   regwrite($CMD_REG, $cmd_val & ~0x4);
+}
+sub read_imem {
+	my($addr) = @_;
+    my $cmd_val = hex(regread($CMD_REG));
+	regwrite($IMEM_ADDR_REG, $addr);
+    regwrite($CMD_REG, $cmd_val | 0x8);
+	# print "imem: ",regread($IMEM_OUT_REG), "\n";
+    print "IMEM[", $addr, "]:   0x",regread($IMEM_OUT_REG), "\n";
+	regwrite($CMD_REG, $cmd_val & ~0x8);
+}
+
+sub imem_load {
+    open my $olderr, ">&STDERR";   # Save original STDERR
+    open STDERR, ">", "/dev/null";
+	my($file) = @_;
+	open my $info, $file or die "Could not open $file: $1";
+	binmode $info;
+	my $count = 0;
+	while (my $line = <$info>){
+		print $line;
+		my $deci = eval("0b$line"); # convert binary to decimal
+		write_imem($count,$deci);
+		$count = $count +1;
+	}
+    open STDERR, ">&", $olderr;
+    print ""
+}
+
+# sub read_ila{
+#     open my $olderr, ">&STDERR";   # Save original STDERR
+#     open STDERR, ">", "/dev/null";
+# 	my($addr) = @_;
+# 	regwrite($ILA1_ADDR_REG, $addr);
+# 	my $raw = regread($ILA_OUT_REG);	
+# 	$raw = substr($raw,2);
+# 	my $binary = unpack("B32",pack("H*",$raw));
+#     my $hexval = uc($raw);
+#     print "ila out         is ",$hexval, "\n";
+# 	my $temp = substr($binary,0,16);
+#     my $temp_hex = sprintf("%04X", oct("0b$temp"));
+# 	print "fpaccum         is ", $temp_hex, "\n";
+# 	$temp = substr($binary,16,16);	
+#     $temp_hex = sprintf("%04X", oct("0b$temp"));
+# 	print "fp2data_acc     is ", $temp_hex, "\n";
+# 	open STDERR, ">&", $olderr;
+# }
+
+# sub read_ila2{
+#     open my $olderr, ">&STDERR";   # Save original STDERR
+#     open STDERR, ">", "/dev/null";
+# 	my($addr) = @_;
+# 	regwrite($ILA2_ADDR_REG, $addr);
+# 	my $raw = regread($ILA2_OUT_REG);	
+# 	$raw = substr($raw,2);
+# 	my $binary = unpack("B32",pack("H*",$raw));
+# 	print "ila out         is ",$binary, "\n";
+# 	my $temp = substr($binary,0,16);	
+#     my $temp_hex = sprintf("%04X", oct("0b$temp"));
+# 	print "fp3data_acc     is ", $temp_hex, "\n";
+# 	$temp = substr($binary,16,1);	
+# 	print "valid_MEM       is ", $temp, "\n";
+# 	$temp = substr($binary,17,1);
+# 	print "wEn_MEM         is ", $temp, "\n";
+# 	$temp = substr($binary,18,9);
+#     my $temp_dec = eval("0b$temp");
+# 	print "waddr_MEM       is ", $temp_dec, "\n";
+#     open STDERR, ">&", $olderr;
+# }
+
+
+sub run{
+    open my $olderr, ">&STDERR";   # Save original STDERR
+    open STDERR, ">", "/dev/null";
+    my $cmd_val = hex(regread($CMD_REG));
+    regwrite($CMD_REG, $cmd_val | 0x2 );
+    open STDERR, ">&", $olderr;
+    print "Pipeline Enabled.\n\n";
+}
+sub stop{
+    open my $olderr, ">&STDERR";   # Save original STDERR
+    open STDERR, ">", "/dev/null";
+    my $cmd_val = hex(regread($CMD_REG));
+    regwrite($CMD_REG,  $cmd_val & ~0x2 );
+    open STDERR, ">&", $olderr;
+    print "Pipeline Disabled.\n\n";
+}
+
+sub route{
+    open my $olderr, ">&STDERR";   # Save original STDERR
+    open STDERR, ">", "/dev/null";
+    my $cmd_val = hex(regread($CMD_REG));
+    regwrite($CMD_REG, $cmd_val | 0x80 );
+    open STDERR, ">&", $olderr;
+    print "Routing Enabled.\n\n";
+}
+sub block{
+    open my $olderr, ">&STDERR";   # Save original STDERR
+    open STDERR, ">", "/dev/null";
+    my $cmd_val = hex(regread($CMD_REG));
+    regwrite($CMD_REG, $cmd_val & ~0x80 );
+    open STDERR, ">&", $olderr;
+    print "Routing Disabled.\n\n";
+}
+
+# Turns an ascii string into a (pattern_hi,pattern_lo) list
+sub pattern_from_ascii {
+   my( $patstr ) = @_;
+   my @chars = split(//, $patstr);
+   my @ints = map {  ord( $_ ) } @chars;
+   my $validBytes = $#ints + 1;
+   my $hi = 0;
+   my $lo = 0;
+   for (my $i = 0; $i <= 6; $i++) {
+      if ($i < $validBytes) {
+         my $bit = 1 << (6 - $i);
+         # print "Setting mask bit $bit for byte $i\n";
+         $hi |= ($bit << 24);
+         if ($i <= 2) {
+            $hi |= ($ints[$i] << (8 * (2 - $i)));
+         } else {
+            my $pos = $i - 3;
+            $lo |= ($ints[$i] << (8 * (3 - $pos)));
+         }
+      }
+   }
+   return ($hi, $lo);
+}
+
+sub usage {
+   print "Usage: procreg <cmd> <cmd options>\n";
+   print "  to be updated:\n";
+
+}
+
+sub configmem {
+    my ($imem_file, $batch_file, $scalar_file) = @_;
+    if (! -e $imem_file) {
+        die "IMEM file '$imem_file' not found.\n";
+    }
+    if (! -e $batch_file) {
+        die "DMEM batch file '$batch_file' not found.\n";
+    }
+    if (! -e $scalar_file) {
+        die "DMEM scalar file '$scalar_file' not found.\n";
+    }
+    print "Loading IMEM from $imem_file...\n";
+    imem_load($imem_file);
+    print "Loading DMEM batch from $batch_file...\n";
+    dmem_load_batch($batch_file);
+    print "Loading DMEM scalar from $scalar_file...\n";
+    dmem_load_scalar($scalar_file);
+}
+
+sub execute {
+    my ($output_file) = @_;
+    run();
+    sleep(1);
+    stop();
+    open my $out, '>', $output_file or die "Could not open $output_file: $!";
+    open my $olderr, ">&STDERR";
+    open STDERR, ">", "/dev/null";
+    for my $addr (0..511) {
+        my $cmd_val = hex(regread($CMD_REG));
+        regwrite($DMEM_ADDR_ENCODED, $addr);
+        regwrite($CMD_REG, $cmd_val | 0x20);
+        my $val16 = hex(regread($DMEM_OUT_ENCODED)) & 0xFFFF;
+        print $out sprintf("%04X\n", $val16);
+        regwrite($CMD_REG, $cmd_val & ~0x20);
+    }
+    open STDERR, ">&", $olderr;
+    close $out;
+    print "Execution complete. Output written to $output_file\n";
+}
+
+
+my $numargs = $#ARGV + 1;
+if( $numargs < 1 ) {
+   usage();
+   exit(1);
+}
+my $cmd = $ARGV[0];
+if ($cmd eq "reset") {
+   procreset();
+} elsif ($cmd eq "loadim") {
+     if ($numargs < 2) {
+      usage();
+      exit(1);
+   }
+    my $file = $ARGV[1];
+   imem_load($file);
+
+
+} elsif ($cmd eq "readim") {
+     if ($numargs < 2) {
+      usage();
+      exit(1);
+   }
+     my $addr = $ARGV[1];
+   read_imem($addr);
+} elsif ($cmd eq "writeim") {
+     if ($numargs < 3) {
+      usage();
+      exit(1);
+   }
+     my $addr = $ARGV[1];
+     my $deci = $ARGV[2];
+     write_imem($addr, $deci);
+
+} elsif ($cmd eq "loaddms") {
+     if ($numargs < 2) {
+      usage();
+      exit(1);
+   }
+    my $file = $ARGV[1];
+   dmem_load_scalar($file);
+} elsif ($cmd eq "loaddmb") {
+     if ($numargs < 2) {
+      usage();
+      exit(1);
+   }
+    my $file = $ARGV[1];
+   dmem_load_batch($file);
+} elsif ($cmd eq "loaddme") {
+     if ($numargs < 2) {
+      usage();
+      exit(1);
+   }
+    my $file = $ARGV[1];
+   dmem_load_encoded($file);
+} elsif ($cmd eq "readdme") {
+     if ($numargs < 2) {
+      usage();
+      exit(1);
+   }
+     my $addr = $ARGV[1];
+   read_dmem_encoded($addr);
+} elsif ($cmd eq "readdms") {
+     if ($numargs < 2) {
+      usage();
+      exit(1);
+   }
+     my $addr = $ARGV[1];
+   read_dmem_scalar($addr);
+} elsif ($cmd eq "readdmb") {
+     if ($numargs < 2) {
+      usage();
+      exit(1);
+   }
+     my $addr = $ARGV[1];
+   read_dmem_batch($addr);
+} elsif ($cmd eq "readim") {
+     if ($numargs < 2) {
+      usage();
+      exit(1);
+   }
+     my $addr = $ARGV[1];
+   read_imem($addr);
+
+}elsif($cmd eq "run"){
+	run();	
+}elsif($cmd eq "stop"){
+	stop();	
+}elsif($cmd eq "route"){
+	route();	
+}elsif($cmd eq "block"){
+	block();	
+}
+elsif ($cmd eq "readila1"){
+	if($numargs<2) {
+		usage();
+		exit(1);
+	}
+	my $addr = $ARGV[1];
+	read_ila($addr);
+}
+elsif ($cmd eq "readila"){
+    if($numargs<2) {
+        usage();
+        exit(1);
+    }
+    my $addr = $ARGV[1];
+    read_ila($addr);
+	read_ila2($addr);
+}
+elsif ($cmd eq "readila2"){
+	if($numargs<2) {
+		usage();
+		exit(1);
+	}
+	my $addr = $ARGV[1];
+	read_ila2($addr);
+}elsif ($cmd eq "dumpdms") {
+   dump_dmem_scalar();
+}elsif ($cmd eq "dumpdme") {
+   dump_dmem_encoded();
+}elsif ($cmd eq "dumpdmb") {
+   dump_dmem_batch();
+}elsif ($cmd eq "dumpim") {
+   dump_imem();
+} elsif ($cmd eq "allregs") {
+    open my $olderr, ">&STDERR";   # Save original STDERR
+    open STDERR, ">", "/dev/null";
+
+    print "command:             ", regread($CMD_REG), "\n";
+    print "dmem addr encoded:   ", regread($DMEM_ADDR_ENCODED), "\n";
+    print "dmem addr batch:     ", regread($DMEM_ADDR_BATCH), "\n";
+    print "dmem addr scalar:    ", regread($DMEM_ADDR_SCALAR), "\n";
+    print "dmem data encoded:   ", regread($DMEM_DATA_ENCODED), "\n";
+    print "dmem data batch:     ", regread($DMEM_DATA_BATCH), "\n";
+    print "dmem data scalar:    ", regread($DMEM_DATA_SCALAR), "\n";
+    print "imem addr:           ", regread($IMEM_ADDR_REG), "\n";
+    print "imem data:           ", regread($IMEM_DATA_REG), "\n";
+    print "dmem out encoded:    ", regread($DMEM_OUT_ENCODED), "\n";
+    print "dmem out batch:      ", regread($DMEM_OUT_BATCH), "\n";
+    print "dmem out scalar:     ", regread($DMEM_OUT_SCALAR), "\n";
+    print "imem out:            ", regread($IMEM_OUT_REG), "\n";
+
+    open STDERR, ">&", $olderr;
+} elsif ($cmd eq "configmem") {
+    if ($numargs < 4) {
+        usage();
+        exit(1);
+    }
+    my $imem_file = $ARGV[1];
+    my $batch_file = $ARGV[2];
+    my $scalar_file = $ARGV[3];
+    configmem($imem_file, $batch_file, $scalar_file);
+    
+ } elsif ($cmd eq "execute") {
+    if ($numargs < 2) {
+        usage();
+        exit(1);
+    }
+    my $outfile = $ARGV[1];
+    execute($outfile);
+ 
+ 
+} else {
+    print "Unrecognized command $cmd\n";
+    usage();
+    exit(1);
+
+}

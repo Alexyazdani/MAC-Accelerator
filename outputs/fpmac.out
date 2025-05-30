@@ -1,0 +1,39 @@
+----- MAC Step 1 -----
+oprA: 31d0
+oprB: 368b
+----- MAC Step 2 -----
+oprA: 349d
+oprB: 3047
+Result: 2cc0
+----- MAC Step 3 -----
+oprA: 35e9
+oprB: 3b14
+Result: 2f37
+----- MAC Step 4 -----
+oprA: 391d
+oprB: 3ad1
+Result: 3707
+----- MAC Step 5 -----
+oprA: 35ac
+oprB: 3797
+Result: 3bde
+----- MAC Step 6 -----
+oprA: 37fa
+oprB: 3ac9
+Result: 3c9b
+----- MAC Step 7 -----
+oprA: 37f1
+oprB: 3b91
+Result: 3e4b
+----- MAC Step 8 -----
+oprA: 3636
+oprB: 395d
+Result: 4015
+----- MAC Step 9 -----
+oprA: 380e
+oprB: 34fd
+Result: 409a
+----- MAC Step 10 -----
+oprA: 2d82
+oprB: 3352
+Result: 40ea
