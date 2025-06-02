@@ -81,8 +81,6 @@ The following equation is used to decode the computed GPU operation (inside of S
   - K : number of batches (images)
   - Y	: output image as matrix, must be equal to the input image after decoding
 
-### Decoding Computation
-
 
 # Block Diagram
 ![fp_pipe](https://github.com/user-attachments/assets/571f1f90-0685-4b74-8c34-b4ecbc1ed2e7)
