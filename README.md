@@ -85,19 +85,24 @@ The following equation is used to decode the computed GPU operation (inside of S
 
 
 # Block Diagram
-![image](https://github.com/user-attachments/assets/439c11d4-0899-4095-aaa0-ceb11b92a28d)
+![fp_pipe](https://github.com/user-attachments/assets/571f1f90-0685-4b74-8c34-b4ecbc1ed2e7)
 
 - DMEM Explanation:
-  - Batch Set: 7 Batches/Images, 8x16b each (8 "pixels"), and one additional 8x16b noise vector
-    - So, our DMEM that stores the batches must be (7+1)•8•16b = 64•16b
+  - Batch Set: 7 Batches/Images, 8x8x16b each (64 "pixels"), and one additional 8x8x16b noise vector
+    - So, our DMEM that stores the batches must be (7+1)•64•16b = 512•16b
   - Random Scalar Set: There are [K+1]•[K+1] random scalars (alphas)
-    - So, another DMEM will store the 64x16b scalars
-  - Encoded Set: ((7+1)•8)x16b are produced following encoding
-    - So, the DMEM that stores the final encoded set is 64x16b
+    - So, another DMEM will store the 512x16b scalars
+  - Encoded Set: ((7+1)•64)x16b are produced following encoding
+    - So, the DMEM that stores the final encoded set is 512x16b
    
 # Timing Comparisons, C Code vs FPGA
 - Average of 10 runs of encode_decode.c
-  - Image Dimension: 8x16b
+  - Image Dimension: 64x16b
   - Batch Size: 7 Batches
   - Encode Phase: 0.0000123s = 12.3us
   - Decode Phase: 0.0000109s = 10.9us
+
+## Demo Video:
+[![Watch the video](https://img.youtube.com/vi/7w71svydNvU/0.jpg)](https://youtu.be/7w71svydNvU)
+https://youtu.be/7w71svydNvU
+
