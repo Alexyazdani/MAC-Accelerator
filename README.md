@@ -1,5 +1,5 @@
-# DarKnight Overview
-This paper presents DarKnight, a framework for large DNN training
+# Project Overview
+This project implements DarKnight, a framework for large DNN training
 while protecting input privacy and computation integrity. DarKnight
 relies on cooperative execution between trusted execution
 environments (TEE) and accelerators, where the TEE provides privacy
