@@ -100,7 +100,7 @@ The following equation is used to decode the computed GPU operation (inside of S
   - Encode Phase: 0.0000123s = 12.3us
   - Decode Phase: 0.0000109s = 10.9us
 
-## Demo Video:
+# Demo Video:
 [![Watch the video](https://img.youtube.com/vi/7w71svydNvU/0.jpg)](https://youtu.be/7w71svydNvU)
 
 https://youtu.be/7w71svydNvU
